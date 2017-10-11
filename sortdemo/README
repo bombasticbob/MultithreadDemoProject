@@ -1,0 +1,74 @@
+Sort Demo - sample application using wxWidgets
+(c) 2004 by 'Big Bad Bob' Frazier - all rights reserved
+
+
+This software is covered by the GNU GPL, see www.gnu.org/copyleft/gpl.html
+for details.
+
+In essence, this means it's open source software, and if you use it
+as part of your own application, you must make the source files available
+as per the GPL.  Use as sample code for writing your own applications is
+encouraged; however, outright plagiarism outside of the provisions of
+the GPL is strictly unauthorized.
+
+There are no other restrictions on its distribution or use.  You may freely
+distribute this application so long as the source files are also made
+available to anyone who requests them.
+
+This software comes with no warantees, either implied or explicit.
+
+
+
+INSTALLATION
+------------
+
+See 'INSTALL' file included with this distribution
+
+Prior to installation, you may have to use the auto tools to create
+the necessary files.  To do so, enter the following commands:
+
+aclocal
+autoconf
+automake --add-missing --copy
+
+You could also run 'autoscan' at least once and do what it says.
+
+
+PRE-REQUISITES
+--------------
+
+This software requires the following packages be installed to build
+and to run.
+
+wxWindows 2.4.2 or later
+xrc contributed software
+wxrc application (contributed software)
+
+For more information on building these, see the instructions included
+with wxWidgets.  At some point in the future, xrc and wxrc are supposed
+to be made part of the core distribution.  Until then you will need to
+find a way to install them.  In FreeBSD, for example, there is a separate
+port to install 'contributed' software, and 'development tools' for the
+wxWidgets package.  Other systems, such as APT or RPM, will probably have
+similar conventions.
+
+
+
+RE-DISTRIBUTION
+---------------
+
+Re-distribution of this application is permitted according to the GPL,
+with additional permission granted as stated below.
+
+No additional restrictions exist.
+
+You may also link this or any derived work with any third party
+libraries as you see fit, regardless of whether or not they are covered
+by the GPL.  Additional license restrictions, such as the inclusion of
+a copyright statement or authorship, may also be applied to a derived
+work, so long as the purpose of the GPL is maintained:  that the source
+files will be made readily available to anyone who requests them, and
+that it remains reasonably possible for the requesting party to build
+from source.
+
+

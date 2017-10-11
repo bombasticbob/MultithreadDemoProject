@@ -1,0 +1,283 @@
+# TARGTYPE "Win32 (x86) Application" 0x0101
+#
+# Depends on wxWidgets 2.6.1
+# if you are using a different version, you will probably have to make
+# changes to this makefile.
+
+!IF "$(WXWIN)" == ""
+WXWIN=c:\wxWidgets-2.6.1
+!MESSAGE You should define the path for wxWindows, defaulting to $(WXWIN)
+!ENDIF
+
+WXDIR = $(WXWIN)
+LIB=$(WXWIN)/lib/vc_lib;$(LIB)
+
+!IF "$(CFG)" == ""
+CFG=Debug
+!MESSAGE No configuration specified.  Defaulting to Debug.
+!ENDIF 
+
+!IF "$(CFG)" != "Debug" && "$(CFG)" != "Release"
+!MESSAGE Invalid configuration "$(CFG)" specified.
+!MESSAGE You can specify a configuration when running NMAKE on this makefile
+!MESSAGE by defining the macro CFG on the command line.  For example:
+!MESSAGE 
+!MESSAGE NMAKE /f "sortdemo.mak" CFG="Debug"
+!MESSAGE 
+!MESSAGE Possible choices for configuration are:
+!MESSAGE 
+!MESSAGE "Debug"
+!MESSAGE "Release"
+!MESSAGE 
+!ERROR An invalid configuration is specified.
+!ENDIF 
+
+
+################################################################################
+# Begin Project
+# PROP Target_Last_Scanned "Release"
+MTL=MkTypLib.exe
+CPP=cl.exe
+RSC=rc.exe
+WXRC="$(WXWIN)/bin/wxrc.exe"
+
+!IF "$(RUNTIME)" == ""
+RUNTIME=MT
+# note:  default wxWidgets behavior is shared run-time
+#        to alter, build with CONFIG=static
+#        then change 'RUNTIME' to 'MT'
+!ENDIF
+
+!IF "$(RUNTIME)" != "MD" && "$(RUNTIME)" != "MT"
+!MESSAGE Invalid RUNTIME= specified on command line
+!MESSAGE Choose either RUNTIME=MD (default) or RUNTIME=MT
+!MESSAGE and make sure that wxWidgets uses the appropriate
+!MESSAGE run-time option or you'll get link errors
+!MESSAGE
+!ERROR An invalid runtime option was specified
+!ENDIF
+
+
+WIN32_LIBS= kernel32.lib gdi32.lib user32.lib advapi32.lib WS2_32.lib Ole32.lib OleAcc.lib OlePro32.lib OleAut32.lib OleDlg.lib Shell32.lib ComCtl32.lib ComDlg32.lib RpcRT4.lib 
+
+!IF  "$(CFG)" == "Debug"
+
+OUTDIR=.\WinDebug
+INTDIR=.\WinDebug
+
+ALL : $(OUTDIR)/sortdemo.exe
+
+$(OUTDIR) : 
+    if not exist $(OUTDIR)/nul mkdir $(OUTDIR)
+
+CPP_PROJ=/nologo /$(RUNTIME)d /W3 /GX /Zi /Od $(WXCPP_INCLUDES)\
+ /D "_DEBUG" /D "WIN32" /D "_WINDOWS" $(WXCPP_DEFINES) /D "__WXDEBUG__"\
+ /D "_MBCS" /Fo$(INTDIR)/ /Fd$(OUTDIR)/"sortdemo.pdb" /c 
+CPP_OBJS=./WinDebug/
+RSC_PROJ=/l 0x409 /fo$(INTDIR)/"sortdemo.res" /d "_DEBUG" 
+
+WXCPP_DEFINES= -D "WIN32" -D "_WIN32" -D "__WIN32__" -D "_WINDOWS"\
+  -D "WINVER=0x0400" -D "__WIN95__" -D "STRICT" -D "__WXMSW__"
+WXCPP_INCLUDES=-I "$(WXDIR)/lib/vc_lib/mswd" -I "$(WXDIR)/include" -I"$(WXDIR)/contrib/include"\
+  -I "$(WXDIR)/src/regex" -I "$(WXDIR)/src/png" -I "$(WXDIR)/src/zlib" -I "$(WXDIR)/src/jpeg"\
+  -I "$(WXDIR)/src/tiff"
+WXCPP_LIB=$(WXDIR)/lib
+
+LINK32=link.exe
+LINK32_FLAGS=/NOLOGO /BASE:0x40000 /STACK:0x100000,0x10000 /SUBSYSTEM:windows\
+ /INCREMENTAL:no /PDB:$(OUTDIR)/"sortdemo.pdb" /DEBUG /MACHINE:I386\
+ /OUT:$(OUTDIR)/"sortdemo.exe" /LIBPATH:$(WXCPP_LIB)
+DEF_FILE=
+LINK32_OBJS= \
+	$(INTDIR)/sortdemo.obj \
+	$(INTDIR)/mainfrm.obj \
+	$(INTDIR)/sortdemo.res \
+	$(INTDIR)/mainview.obj \
+	$(INTDIR)/sortproc.obj \
+	$(INTDIR)/SortdemoResource.obj
+LINK32_LIBS= \
+  wxbase26d.lib wxbase26d_net.lib wxbase26d_xml.lib wxmsw26d_core.lib \
+  wxmsw26d_adv.lib wxmsw26d_html.lib wxmsw26d_media.lib wxmsw26d_xrc.lib \
+  wxexpatd.lib wxzlibd.lib wxjpegd.lib wxpngd.lib wxregexd.lib wxtiffd.lib $(WIN32_LIBS)
+
+
+
+$(OUTDIR)/sortdemo.exe : $(OUTDIR)  $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS) $(LINK32_LIBS)
+<<
+
+!ELSEIF  "$(CFG)" == "Release"
+
+OUTDIR=.\WinRel
+INTDIR=.\WinRel
+
+ALL : $(OUTDIR)/sortdemo.exe
+
+$(OUTDIR) : 
+    if not exist $(OUTDIR)/nul mkdir $(OUTDIR)
+
+CPP_PROJ=/nologo /$(RUNTIME) /W3 /GX /O2 $(WXCPP_INCLUDES)\
+ /D "NDEBUG" /D "WIN32" /D "_WINDOWS" $(WXCPP_DEFINES)\
+ /D "_MBCS" /Fo$(INTDIR)/ /c 
+
+CPP_OBJS=./WinRel/
+RSC_PROJ=/l 0x409 /fo$(INTDIR)/"sortdemo.res" /d "NDEBUG" /d "_AFXDLL" 
+	
+WXCPP_DEFINES= -D "WIN32" -D "_WIN32" -D "__WIN32__" -D "_WINDOWS"\
+  -D "WINVER=0x0400" -D "__WIN95__" -D "STRICT" -D "__WXMSW__"
+WXCPP_INCLUDES=-I "$(WXDIR)/lib/vc_lib/msw" -I "$(WXDIR)/include" -I"$(WXDIR)/contrib/include"\
+  -I "$(WXDIR)/src/regex" -I "$(WXDIR)/src/png" -I "$(WXDIR)/src/zlib" -I "$(WXDIR)/src/jpeg"\
+  -I "$(WXDIR)/src/tiff"
+WXCPP_LIB=$(WXDIR)/lib
+
+LINK32=link.exe
+LINK32_FLAGS=/NOLOGO /BASE:0x40000 /STACK:0x100000,0x10000 /SUBSYSTEM:windows\
+ /INCREMENTAL:no /PDB:$(OUTDIR)/"sortdemo.pdb" /MACHINE:I386\
+ /OUT:$(OUTDIR)/"sortdemo.exe" /LIBPATH:$(WXCPP_LIB)
+DEF_FILE=
+LINK32_OBJS= \
+	$(INTDIR)/sortdemo.obj \
+	$(INTDIR)/mainfrm.obj \
+	$(INTDIR)/sortdemo.res \
+	$(INTDIR)/mainview.obj \
+	$(INTDIR)/sortproc.obj \
+	$(INTDIR)/SortdemoResource.obj
+LINK32_LIBS= \
+  wxbase26.lib wxbase26_net.lib wxbase26_xml.lib wxmsw26_core.lib \
+  wxmsw26_adv.lib wxmsw26_html.lib wxmsw26_media.lib wxmsw26_xrc.lib \
+  wxexpat.lib wxzlib.lib wxjpeg.lib wxpng.lib wxregex.lib wxtiff.lib $(WIN32_LIBS)
+
+
+$(OUTDIR)/sortdemo.exe : $(OUTDIR)  $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS) $(LINK32_LIBS)
+<<
+
+!ENDIF 
+
+MTL_PROJ=
+
+.xrc.cpp:
+	$(WXRC) --cpp-code --output $*.cpp $<  
+
+.c{$(CPP_OBJS)}.obj:
+	$(CPP) $(CPP_PROJ) $<  
+
+.cpp{$(CPP_OBJS)}.obj:
+	$(CPP) $(CPP_PROJ) $<  
+
+.cxx{$(CPP_OBJS)}.obj:
+	$(CPP) $(CPP_PROJ) $<  
+
+
+clean::
+  del "$(INTDIR)\*.*" /Q
+
+
+################################################################################
+# Begin Group "Source Files"
+
+################################################################################
+# Begin Source File
+
+./SortdemoResource.cpp :  ./SortdemoResource.xrc
+	$(WXRC) -v --cpp-code --output="$*.cpp" $? 
+
+
+$(INTDIR)/SortdemoResource.obj :  ./SortdemoResource.cpp ./SortdemoResource.xrc $(INTDIR)
+
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\sortdemo.cpp
+DEP_SORTD=\
+	.\stdafx.h\
+	.\sortdemo.h\
+	.\mainview.h\
+	.\mainfrm.h
+
+$(INTDIR)/sortdemo.obj :  $(SOURCE)  $(DEP_SORTD) $(INTDIR)
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\mainfrm.cpp
+DEP_MAINF=\
+	.\stdafx.h\
+	.\sortdemo.h\
+	.\mainview.h\
+	.\sortproc.h\
+	.\mainfrm.h
+
+$(INTDIR)/mainfrm.obj :  $(SOURCE)  $(DEP_MAINF) $(INTDIR)
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=$(WXWIN)/include/wx/msw/wx.rc
+DEP_SORTDE=\
+    $(WXWIN)/include/wx/msw/hand.cur \
+    $(WXWIN)/include/wx/msw/bullseye.cur \
+    $(WXWIN)/include/wx/msw/pencil.cur \
+    $(WXWIN)/include/wx/msw/magnif1.cur \
+    $(WXWIN)/include/wx/msw/roller.cur \
+    $(WXWIN)/include/wx/msw/pbrush.cur \
+    $(WXWIN)/include/wx/msw/pntleft.cur \
+    $(WXWIN)/include/wx/msw/pntright.cur \
+    $(WXWIN)/include/wx/msw/blank.cur \
+    $(WXWIN)/include/wx/msw/rightarr.cur \
+    $(WXWIN)/include/wx/msw/cross.cur \
+    $(WXWIN)/include/wx/msw/folder1.ico \
+    $(WXWIN)/include/wx/msw/folder2.ico \
+    $(WXWIN)/include/wx/msw/file1.ico \
+    $(WXWIN)/include/wx/msw/computer.ico \
+    $(WXWIN)/include/wx/msw/drive.ico \
+    $(WXWIN)/include/wx/msw/cdrom.ico \
+    $(WXWIN)/include/wx/msw/floppy.ico \
+    $(WXWIN)/include/wx/msw/removble.ico \
+    $(WXWIN)/include/wx/msw/csquery.bmp \
+    $(WXWIN)/include/wx/msw/colours.bmp
+
+$(INTDIR)/sortdemo.res :  $(SOURCE)  $(DEP_SORTDE) $(INTDIR)
+   $(RSC) $(RSC_PROJ) /i $(WXWIN)/include $(SOURCE)
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\readme.txt
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\mainview.cpp
+DEP_MAINV=\
+	.\stdafx.h\
+	.\sortdemo.h\
+	.\mainview.h
+
+$(INTDIR)/mainview.obj :  $(SOURCE)  $(DEP_MAINV) $(INTDIR)
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\sortproc.cpp
+DEP_SORTP=\
+	.\stdafx.h\
+	.\sortdemo.h\
+	.\mainview.h\
+	.\mainfrm.h\
+	.\sortproc.h
+
+$(INTDIR)/sortproc.obj :  $(SOURCE)  $(DEP_SORTP) $(INTDIR)
+
+# End Source File
+# End Group
+# End Project
+################################################################################

@@ -1,0 +1,175 @@
+<?xml version="1.0"?>
+<resource version="2.3.0.1">
+  <object class="wxIcon" name="ICON_Main">./res/Sortdemo.ico</object>
+  <object class="wxToolBar" name="TOOLBAR_Main">
+    <style>wxTB_FLAT|wxTB_DOCKABLE</style>
+    <margins>2,2</margins>
+    <object class="tool" name="IDM_SORT_NEWDATA">
+      <bitmap>res/toolbar1.bmp</bitmap>
+      <tooltip>Generate New Data</tooltip>
+    </object>  
+    <object class="tool" name="IDM_SORT_RESTORE">
+      <bitmap>res/toolbar2.bmp</bitmap>
+      <tooltip>Restore Previous Data</tooltip>
+    </object>
+    <object class="separator"/>
+    <object class="tool" name="IDM_SORT_INSERTION">
+      <bitmap>res/toolbar3.bmp</bitmap>
+      <tooltip>Insertion Sort</tooltip>
+    </object>
+    <object class="tool" name="IDM_SORT_BUBBLE">
+      <bitmap>res/toolbar4.bmp</bitmap>
+      <tooltip>Bubble Sort</tooltip>
+    </object>
+    <object class="tool" name="IDM_SORT_EXCHANGE">
+      <bitmap>res/toolbar5.bmp</bitmap>
+      <tooltip>Exchange Sort</tooltip>
+    </object>
+    <object class="tool" name="IDM_SORT_SHELL">
+      <bitmap>res/toolbar6.bmp</bitmap>
+      <tooltip>Shell Sort</tooltip>
+    </object>
+    <object class="tool" name="IDM_SORT_HEAP">
+      <bitmap>res/toolbar7.bmp</bitmap>
+      <tooltip>Microsoft's Heap Sort Algorithm</tooltip>
+    </object>
+    <object class="tool" name="IDM_SORT_HEAP2">
+      <bitmap>res/toolbar8.bmp</bitmap>
+      <tooltip>Improved Heap Sort Algorithm)</tooltip>
+    </object>
+    <object class="tool" name="IDM_SORT_QUICK">
+      <bitmap>res/toolbar9.bmp</bitmap>
+      <tooltip>Quick Sort</tooltip>
+    </object>
+    <object class="separator"/>
+    <object class="tool" name="IDM_SORT_KILL">
+      <bitmap>res/toolbar10.bmp</bitmap>
+      <tooltip>Kill Sort Thread</tooltip>
+    </object>
+      ID_SEPARATOR,
+    <object class="tool" name="ID_APP_ABOUT">
+      <bitmap>res/toolbar11.bmp</bitmap>
+      <tooltip>About Sortdemo</tooltip>
+    </object>
+  </object>
+  <object class="wxMenuBar" name="MENUBAR_Main">
+    <style>wxMB_DOCKABLE</style>
+    <object class="wxMenu" name="menu_sort">
+      <label>_Sort</label>
+      <object class="wxMenuItem" name="IDM_SORT_NEWDATA">
+        <label>_New Data</label>
+      </object>
+      <object class="wxMenuItem" name="IDM_SORT_RESTORE">
+        <label>_Restore Previous</label>
+      </object>
+      <object class="separator"/>
+      <object class="wxMenuItem" name="IDM_SORT_INSERTION">
+        <label>_1 Insertion</label>
+      </object>
+      <object class="wxMenuItem" name="IDM_SORT_BUBBLE">
+        <label>_2 Bubble</label>
+      </object>
+      <object class="wxMenuItem" name="IDM_SORT_EXCHANGE">
+        <label>_3 Exchange</label>
+      </object>
+      <object class="wxMenuItem" name="IDM_SORT_SHELL">
+        <label>_4 Shell</label>
+      </object>
+      <object class="wxMenuItem" name="IDM_SORT_HEAP">
+        <label>_5 Heap (1)</label>
+      </object>
+      <object class="wxMenuItem" name="IDM_SORT_HEAP2">
+        <label>_6 Heap (2)</label>
+      </object>
+      <object class="wxMenuItem" name="IDM_SORT_QUICK">
+        <label>_7 Quick</label>
+      </object>
+      <object class="separator"/>
+      <object class="wxMenuItem" name="IDM_SORT_KILL">
+        <label>_Kill Current Sort Thread</label>
+      </object>
+      <object class="separator"/>
+      <object class="wxMenuItem" name="IDM_SORT_EXIT">
+        <label>E_xit\t(Alt F4)</label>
+      </object>
+    </object>
+    <object class="wxMenu" name="menu_view">
+      <label>_View</label>
+      <object class="wxMenuItem" name="ID_VIEW_TOOLBAR">
+        <checkable>1</checkable>
+        <label>_Toolbar</label>
+      </object>
+      <object class="wxMenuItem" name="ID_VIEW_STATUS_BAR">
+        <checkable>1</checkable>
+        <label>_Status Bar</label>
+      </object>
+    </object>
+    <object class="wxMenu" name="menu_help">
+      <label>_Help</label>
+      <object class="wxMenuItem" name="ID_APP_ABOUT">
+        <label>_About sortdemo...</label>
+      </object>
+    </object>
+  </object>
+  
+  <object class="wxDialog" name="IDD_ABOUTBOX">
+    <style>wxCAPTION|wxTHICK_FRAME</style>
+    <title>About Sort Demo</title>
+    <object class="wxBoxSizer">
+      <orient>wxVERTICAL</orient>
+      <object class="sizeritem" name="IDD_ABOUTBOX_0a">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem" name="IDD_ABOUTBOX_1a">
+            <object class="wxStaticBitmap" name="IDD_ABOUTBOX_ICON_1">
+              <size>16,16d</size>
+              <bitmap>./res/Sortdemo.ico</bitmap>
+            </object>
+          </object>
+          <object class="sizeritem" name="IDD_ABOUTBOX_2a">
+            <object class="wxBoxSizer">
+              <orient>wxVERTICAL</orient>
+              <object class="sizeritem" name="IDD_ABOUTBOX_3a">
+                <object class="wxStaticText" name="IDD_ABOUTBOX_S1">
+                  <size>200,9d</size>
+                  <style>wxALIGN_CENTRE|wxST_NO_AUTORESIZE</style>
+                  <label>SORT DEMO Version 1.0</label>
+                </object>
+              </object>  
+              <object class="sizeritem" name="IDD_ABOUTBOX_3b">
+                <object class="wxStaticText" name="IDD_ABOUTBOX_S2">
+                  <size>200,9d</size>
+                  <style>wxALIGN_CENTRE|wxST_NO_AUTORESIZE</style>
+                  <label>Copyright (c) 2005 by R. E. Frazier</label>
+                </object>
+              </object>  
+              <object class="sizeritem" name="IDD_ABOUTBOX_3c">
+                <object class="wxStaticText" name="IDD_ABOUTBOX_S3">
+                  <size>200,9d</size>
+                  <style>wxALIGN_CENTRE|wxST_NO_AUTORESIZE</style>
+                  <label>all rights reserved</label>
+                </object>
+              </object>
+              <border>1</border>
+            </object>  
+          </object>
+          <object class="sizeritem" name="IDD_ABOUTBOX_2b">
+            <object class="wxStaticBitmap" name="IDD_ABOUTBOX_ICON_2">
+              <size>16,16d</size>
+              <bitmap>./res/Sortdemo.ico</bitmap>
+            </object>
+          </object>
+        </object>
+      </object>
+      <object class="sizeritem" name="IDD_ABOUTBOX_0b">
+        <flag>wxALIGN_CENTRE</flag>
+        <object class="wxButton" name="wxID_OK">
+          <size>40,14d</size>
+          <label>OK</label>
+          <default>1</default>
+        </object>
+      </object>
+      <border>10</border>
+    </object>
+  </object>  
+</resource>
