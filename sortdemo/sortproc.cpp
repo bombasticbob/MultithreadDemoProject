@@ -23,11 +23,14 @@
 
 #include "sortproc.h"
 
+#define MAX_WORK_UNITS 16 /* no more than 16 work units */
+#define THREAD_COUNT_MAX 4 /* max # of threads for 'threaded' sort solutions */
+
 // global variables
 
 int iCompares=0, iSwaps=0;
-int iTimeDelay=2;  // 0.002 seconds, approximately
-
+int iTimeDelay = 2;  // 0.002 seconds, approximately
+int iSchedWork = 0; // # of work units scheduled
 
 void QuickSort2( int iLow, int iHigh );
 void PercolateDown( int iMaxLevel );
@@ -708,3 +711,784 @@ int iUp, iDown, iBreak;
         }
     }
 }
+
+/* ThreadQuickSort - like a regular quick sort, but uses 'work units' and
+                     concurrent threads to greatly enhance the process on
+                     multi-CPU platforms.  Requires dual core or better
+                     to demonstrate a benefit.
+*/
+
+wxMutex mtxQS;  // qsort global mutex for general synchronization (TODO: critical section instead?)
+static wxMutex mtxCond; // needed for wxCondition
+wxCondition condQS(mtxCond);  // global 'condition' that's signaled whenever I need to wake up something
+
+typedef struct __work_unit__
+{
+  struct __work_unit__ *pPrev, *pNext;  // linked list for active and free work units
+  void *m_id;                   // identifier (must be unique)
+  int m_low, m_high;            // low/high values for quicksort algorithm
+  // NOTE:  this must be a non-overlapping section with non-recursive work
+
+  volatile int m_state;  // current state (< 0 = error, > 0 = running, 0 = pending)
+} work_unit;
+
+static work_unit * volatile pFree = NULL, * volatile pActive = NULL, * volatile pTail = NULL;
+static volatile int iThreadCount = 0;
+static work_unit aWU[MAX_WORK_UNITS];
+
+static int TQSSchedule(void *pID, int iLow, int iHigh); // schedule a work unit
+static void TQSWait(void *pID);    // wait for ALL pending objects that I've spawned
+work_unit * TQSNext(void);         // wait for and get the next available work unit (returns NULL after timeout to end thread)
+static void TQSDone(work_unit *);  // 
+
+void ThreadQuickSort()
+{
+int iID = 0;
+
+   iCompares = iSwaps = iSchedWork = 0;
+
+   TQSSchedule(&iID, 0, N_DIMENSIONS(pData) - 1); // assume it works, for now
+   TQSWait(&iID);
+}
+
+void ThreadQuickSort2( work_unit *pWU )
+{
+int iLow = pWU->m_low;
+int iHigh = pWU->m_high;
+int iUp, iDown, iBreak;
+
+    if( iLow < iHigh )                 // do not sort 1 element block
+    {
+        iBreak = pData[(iLow + iHigh)/2];    // initial pivot point
+
+        if( (iHigh - iLow) > 5 )       // 5 or more elements?
+        {
+            // do a 'median of 3' optimization when practical
+            // this ensures a better pivot point, limiting the 
+            // effect of an already sorted or nearly sorted 
+            // array on performance.  Pivot points should be
+            // as close to the median value as practical for
+            // the current range of data points.  Otherwise,
+            // a series of bad pivot points could degenerate
+            // the 'quicksort' into a 'slowsort', and possibly
+            // cause stack overflows on large data sets.
+
+            if(pData[iLow] <= pData[iHigh])
+            {
+               if(iBreak > pData[iLow])
+               {
+                  if(iBreak > pData[iHigh])
+                  {
+                     iBreak = pData[iHigh];
+                  }
+               }
+               else
+               {
+                  iBreak = pData[iLow];
+               }
+            }
+            else
+            {
+               if(iBreak > pData[iHigh])
+               {
+                  if(iBreak > pData[iLow])
+                  {
+                     iBreak = pData[iLow];
+                  }
+               }
+               else
+               {
+                  iBreak = pData[iHigh];
+               }
+            }
+        }
+
+
+        iUp = iLow;                  // initialize indices
+        iDown = iHigh;
+
+        do
+        {
+            if(wxMyThread::SafeTestDestroy())
+              return;
+
+            // Move in from both sides towards the pivot point.
+
+            while( iUp < iHigh)
+            {
+                if(wxMyThread::SafeTestDestroy())
+                  return;
+
+                iCompares++;
+                FlashBar( iUp );
+
+                if(pData[iUp] < iBreak)
+                {
+                    iUp++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            while(iDown > iLow)
+            {
+                if(wxMyThread::SafeTestDestroy())
+                  return;
+
+                iCompares++;
+                FlashBar( iDown );
+
+                if(pData[iDown] > iBreak)
+                {
+                    iDown--;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+
+            // if low/high boundaries have not crossed, swap current
+            // 'boundary' values so that the 'iUp' pointer points
+            // to a value less than or equal to the pivot point, 
+            // and the 'iDown' value points to a value greater than
+            // or equal to the pivot point, and continue.
+
+            if( iUp <= iDown )
+            {
+                if(iUp != iDown) SwapBars( iUp, iDown );
+                iUp++;
+                iDown--;
+            }
+
+        } while ( iUp <= iDown );
+
+        // since I don't break out until iUp > iDown, I can assume for the moment
+        // that ONCE I REACH THIS POINT the iLow to iDown segment does NOT OVERLAP
+        // the iUp to iHigh segment.  If there is an overlap, I must not use threads
+        // in the 'split up the work' part.  Otherwise, parallel processing GO!
+
+        // the recursive part...
+
+        if(iUp > iDown &&
+           iLow < iDown &&
+           iUp < iHigh)
+        {
+            work_unit wuTemp;
+            int iSchedFlag = 0;
+
+            memset(&wuTemp, 0, sizeof(wuTemp));
+
+            if((iDown - iLow) < (iHigh - iUp)) // do the longer one within the thread
+            {
+                iSchedFlag = TQSSchedule(pWU, iLow, iDown); // schedule lower half
+
+                wuTemp.m_low = iUp;
+                wuTemp.m_high = iHigh;
+            }
+            else
+            {
+                iSchedFlag = TQSSchedule(pWU, iUp, iHigh); // schedule upper half
+
+                wuTemp.m_low = iLow;
+                wuTemp.m_high = iDown;
+            }
+
+            if(iSchedFlag > 0)
+            {
+              // while this is scheduling, process the 2nd half of it
+              // This one will always have more elements in it, logic
+              // being that the 'wait' process is less likely to waste
+              // time that way.
+
+              ThreadQuickSort2(&wuTemp);
+              TQSWait(pWU); // waiting on the scheduled one to finish
+            }            
+
+            if(iSchedFlag) // scheduled _or_ error
+            {
+              return;
+            }
+        }
+        
+        if(wxMyThread::SafeTestDestroy())
+          return;
+
+        if(iLow < iDown )  // everything to the left of the pivot point
+        {
+            QuickSort2( iLow, iDown );
+        }
+        if(iUp < iHigh)    // everything to the right of the pivot point
+        {
+            QuickSort2( iUp, iHigh );
+        }
+    }
+}
+
+static unsigned long TQSThread(void *pUnused)
+{
+work_unit *pWork;
+wxMutexError err1;
+
+  while(!wxMyThread::SafeTestDestroy() &&
+        (err1 = mtxQS.Lock()) != wxMUTEX_NO_ERROR)
+  {
+    if(wxMyThread::SafeTestDestroy())
+    {
+        fprintf(stderr, "THREAD DESTROY in worker thread (1)\n");
+        fflush(stderr);
+      return 0;
+    }
+    else if(err1 == wxMUTEX_DEAD_LOCK)
+    {
+      fprintf(stderr, "DEADLOCK on QS mutex - killing app\n");
+      fflush(stderr);
+      usleep(100000);
+
+      exit(1);
+      return 0; // will never actually reach this
+    }
+
+    MySleep(iTimeDelay);
+  }
+
+  iThreadCount++; // TODO:  atomic inc/dec may be a better solution
+
+  mtxQS.Unlock();
+
+  while(!wxMyThread::SafeTestDestroy() && (pWork = TQSNext()) != NULL)
+  {
+    ThreadQuickSort2(pWork);
+
+    TQSDone(pWork);
+  }
+
+  while(!wxMyThread::SafeTestDestroy() &&
+        (err1 = mtxQS.Lock()) != wxMUTEX_NO_ERROR)
+  {
+    if(wxMyThread::SafeTestDestroy())
+    {
+      fprintf(stderr, "THREAD DESTROY in worker thread (2)\n");
+      fflush(stderr);
+      iThreadCount = 0; // force it
+      return 0;
+    }
+    else if(err1 == wxMUTEX_DEAD_LOCK)
+    {
+      fprintf(stderr, "DEADLOCK on QS mutex - killing app\n");
+      fflush(stderr);
+      usleep(100000);
+
+      exit(1);
+      return 0; // will never actually reach this
+    }
+
+    MySleep(iTimeDelay);
+  }
+
+  iThreadCount--; // TODO:  atomic inc/dec may be a better solution
+
+  mtxQS.Unlock();
+
+  return 0;
+}
+
+
+//wxMutex mtxQS;  // qsort global mutex for general synchronization (TODO: critical section instead?)
+//static wxMutex mtxCond; // needed for wxCondition
+//wxCondition condQS(mtxCond);  // global 'condition' that's signaled whenever I need to wake up something
+//
+//typedef struct __work_unit__
+//{
+//  struct __work_unit__ *pPrev, *pNext;  // linked list for active and free work units
+//  void *m_id;                   // identifier (must be unique)
+//  int m_low, m_high;            // low/high values for quicksort algorithm
+//  // NOTE:  this must be a non-overlapping section with non-recursive work
+//
+//  int m_state;  // current state (< 0 = error, > 0 = running, 0 = pending)
+//} work_unit;
+//
+//static work_unit *pFree = NULL, *pActive = NULL, *pTail = NULL;
+//static int iThreadCount = -1; // also an "I need to initialize my work unit array" flag
+//static work_unit aWU[MAX_WORK_UNITS];
+
+#if 0
+static void InternalReportWorkQueueState(void)
+{
+int i1, i2, i3, i4, i5;
+work_unit *pWU;
+
+  for(i1=0, i2=0; i1 < MAX_WORK_UNITS; i1++)
+  {
+    if(aWU[i1].m_state == 0)
+    {
+      i2++;
+    }
+  }
+
+  i3 = 0;
+  pWU = pFree;
+  while(pWU)
+  {
+    i3++;
+    pWU = pWU->pNext;
+  }
+
+  i4 = i5 = 0;
+  pWU = pActive;
+  while(pWU)
+  {
+    if(pWU->m_state > 0)
+      i4++;
+    else
+      i5++;
+    pWU = pWU->pNext;
+  }
+
+  fprintf(stderr, "TEMPORARY:  queue T=%d Z=%d F=%d R=%d S=%d\n", MAX_WORK_UNITS, i2, i3, i4, i5);
+}
+#endif // 0
+
+
+
+static int TQSSchedule(void *pID, int iLow, int iHigh)
+{
+wxMutexError err1;
+int i1, iNotFound = 0;
+work_unit *pWU = NULL;
+
+
+  do
+  {
+    while(!wxMyThread::SafeTestDestroy() &&
+          (err1 = mtxQS.Lock()) != wxMUTEX_NO_ERROR)
+    {
+      if(wxMyThread::SafeTestDestroy())
+      {
+        fprintf(stderr, "THREAD DESTROY in %s\n", __FUNCTION__);
+        fflush(stderr);
+        return -1;
+      }
+      else if(err1 == wxMUTEX_DEAD_LOCK)
+      {
+        fprintf(stderr, "DEADLOCK on QS mutex - killing app\n");
+        fflush(stderr);
+        usleep(100000);
+        exit(1);
+        return -1; // will never actually reach this
+      }
+
+      MySleep(iTimeDelay);
+    }
+
+    if(wxMyThread::SafeTestDestroy())
+    {
+      fprintf(stderr, "THREAD DESTROY in %s\n", __FUNCTION__);
+      fflush(stderr);
+
+      mtxQS.Unlock();
+      return -1;
+    }
+
+    // check to see if the allocation system is initialized.
+    if(!pFree && !pActive)
+    {
+      memset(aWU, 0, sizeof(aWU));
+
+      for(i1=1; i1 < MAX_WORK_UNITS; i1++)
+      {
+        aWU[i1 - 1].pNext = &(aWU[i1]);
+      }
+
+      pFree = &(aWU[0]);
+    }    
+
+    if(pFree)
+    {
+      pWU = pFree;
+      pFree = pFree->pNext;
+
+      pWU->pNext = pWU->pPrev = NULL;  // not "in use" yet
+    }
+    else
+    {
+      // there are no more free work units, so I want to try and run one right now
+      // This makes the assumption that everyone is waiting for me to finish and
+      // there aren't any work units left because of it.
+
+      pWU = pActive;  // pick the first one if there's none matching what I wait for that is not already running
+
+      while(pWU)
+      {
+        if(pWU->m_state == 0)
+        {
+          break;
+        }
+
+        pWU = pWU->pNext;
+      }
+
+      if(pWU) // something I can work on while waiting
+      {
+        pWU->m_state++;  // mark "in progress"
+        mtxQS.Unlock();
+
+//        fprintf(stderr, "running while waiting work unit id=%p  %d %d\n", pWU->m_id, pWU->m_low, pWU->m_high);
+
+        ThreadQuickSort2(pWU);
+        TQSDone(pWU);  // and it's done (no need to wait on it, yeah!)
+
+        pWU = NULL;  // so I don't accidentally re-use it
+      }
+      else
+      {
+        mtxQS.Unlock();
+
+        if(iNotFound++ > 4) // after 5 tries, return NULL and skip threading
+        {
+          return 0;
+        }
+
+        MySleep(iTimeDelay);  // to give something else a chance to free up a work unit
+      }
+    }
+
+    if(wxMyThread::SafeTestDestroy())
+    {
+      fprintf(stderr, "THREAD DESTROY in %s\n", __FUNCTION__);
+      fflush(stderr);
+      return -1;
+    }
+  } while(!pWU);
+
+  // loop exit has mtxQS locked still
+
+  pWU->m_id = pID;
+  pWU->m_low = iLow;
+  pWU->m_high = iHigh;
+  pWU->m_state = 0;  // for "scheduled" but not yet running
+
+//  fprintf(stderr, "scheduling work unit id=%p  %d %d\n", pWU->m_id, pWU->m_low, pWU->m_high);
+
+  if(pActive)
+  {
+    if(!pTail)
+    {
+      pTail = pActive;
+      while(pTail->pNext)
+      {
+        pTail = pTail->pNext;
+      }
+    }
+
+    pWU->pPrev = pTail;
+    pTail->pNext = pWU;
+  }
+  else
+  {
+    pWU->pPrev = NULL;
+    pActive = pWU;
+  }
+
+  pTail = pWU;  // always (new tail)
+  pWU->pNext = NULL;
+
+//  InternalReportWorkQueueState();
+
+  if(iThreadCount < THREAD_COUNT_MAX)
+  {
+    wxMyThread *pTH = wxBeginThread(TQSThread, NULL);
+
+    mtxQS.Unlock();
+
+    if(!pTH)
+    {
+      fprintf(stderr, "Unable to create threaded-sort thread\n");
+      fflush(stderr);
+      usleep(100000);
+
+      exit(2);  // an error
+      return 1; // it scheduled so return 1
+    }
+    // start another thread, and assume others are busy
+  }
+  else
+  {
+    mtxQS.Unlock();
+  }
+
+  MySleep(iTimeDelay);  // simulating a thread switch or scheduler timeout
+  return 1;
+}
+
+static void TQSWait(void *pID)
+{
+wxMutexError err1;
+int i1;
+work_unit *pWU;
+
+
+//  fprintf(stderr, "waiting for ID %p\n", pID);
+
+  do
+  {
+    while(!wxMyThread::SafeTestDestroy() &&
+          (err1 = mtxQS.Lock()) != wxMUTEX_NO_ERROR)
+    {
+      if(wxMyThread::SafeTestDestroy())
+      {
+        fprintf(stderr, "THREAD DESTROY waiting for %p\n", pID);
+        fflush(stderr);
+        return;
+      }
+      else if(err1 == wxMUTEX_DEAD_LOCK)
+      {
+        fprintf(stderr, "DEADLOCK on QS mutex - killing app\n");
+        fflush(stderr);
+        usleep(100000);
+
+        exit(1);
+        return; // will never actually reach this
+      }
+
+      MySleep(iTimeDelay);
+    }
+
+    if(wxMyThread::SafeTestDestroy())
+    {
+      fprintf(stderr, "THREAD DESTROY waiting for %p\n", pID);
+      fflush(stderr);
+
+      mtxQS.Unlock();
+      return;
+    }
+
+    pWU = pActive;
+
+    while(pWU)
+    {
+      if(pWU->m_id == pID)
+      {
+        if(pWU->m_state >= 0) // pending or running (TODO:  error state?)
+        {
+          break;
+        }
+      }
+
+      pWU = pWU->pNext;
+    }
+
+    if(pWU && iThreadCount >= THREAD_COUNT_MAX)
+    {
+      // do something that I'm waiting on myself
+      while(pWU && (pWU->m_id != pID || pWU->m_state > 0))
+      {
+        pWU = pWU->pNext;
+      }
+
+      if(!pWU)
+      {
+        pWU = pActive;  // pick the first one if there's none matching what I wait for that is not already running
+
+        while(pWU)
+        {
+          if(pWU->m_state == 0)
+          {
+            break;
+          }
+
+          pWU = pWU->pNext;
+        }
+      }
+
+      if(pWU) // something I can work on while waiting
+      {
+        pWU->m_state++;  // mark "in progress"
+        mtxQS.Unlock();
+
+//        fprintf(stderr, "running while waiting work unit id=%p  %d %d\n", pWU->m_id, pWU->m_low, pWU->m_high);
+
+        ThreadQuickSort2(pWU);
+        TQSDone(pWU);  // and it's done (no need to wait on it, yeah!)
+      }
+      else
+      {
+        mtxQS.Unlock();
+      }
+    }
+    else
+    {
+      mtxQS.Unlock();
+
+      if(!pWU)
+      {
+        break;
+      }
+    }
+
+    MySleep(iTimeDelay);  // to give something else a chance to free up a work unit
+
+  } while(!wxMyThread::SafeTestDestroy());
+
+//  if(wxMyThread::SafeTestDestroy())
+//  {
+//    fprintf(stderr, "THREAD DESTROY in %s\n", __FUNCTION__);
+//    fflush(stderr);
+//  }
+//
+//  fprintf(stderr, "DONE waiting for ID %p\n", pID);
+}
+
+work_unit * TQSNext(void)
+{
+wxMutexError err1;
+int i1;
+work_unit *pWU;
+
+
+  for(i1=0; i1 < 1024; i1++)
+  {
+    while(!wxMyThread::SafeTestDestroy() &&
+          (err1 = mtxQS.Lock()) != wxMUTEX_NO_ERROR)
+    {
+      if(wxMyThread::SafeTestDestroy())
+      {
+        fprintf(stderr, "THREAD DESTROY in %s\n", __FUNCTION__);
+        fflush(stderr);
+
+        return NULL;
+      }
+      else if(err1 == wxMUTEX_DEAD_LOCK)
+      {
+        fprintf(stderr, "DEADLOCK on QS mutex - killing app\n");
+        fflush(stderr);
+        usleep(100000);
+
+        exit(1);
+        return NULL; // will never actually reach this
+      }
+
+      MySleep(iTimeDelay);
+    }
+
+    if(wxMyThread::SafeTestDestroy())
+    {
+      fprintf(stderr, "THREAD DESTROY in %s\n", __FUNCTION__);
+      fflush(stderr);
+
+      mtxQS.Unlock();
+      return NULL;
+    }
+
+    pWU = pActive;
+
+    while(pWU)
+    {
+      if(pWU->m_state == 0)
+      {
+        break;
+      }
+
+      pWU = pWU->pNext;
+    }
+
+    if(pWU)
+    {
+      pWU->m_state++;  // it's now "running"
+
+      iSchedWork++;
+
+//  InternalReportWorkQueueState();
+
+      mtxQS.Unlock();
+
+//      fprintf(stderr, "running work unit id=%p  %d %d\n", pWU->m_id, pWU->m_low, pWU->m_high);
+
+      return pWU;
+    }
+
+    mtxQS.Unlock();
+
+    MySleep(iTimeDelay);  // to give something else a chance to free up a work unit
+  }
+
+  return NULL;
+}
+
+static void TQSDone(work_unit *pWU)
+{
+wxMutexError err1;
+
+// de-allocating a work unit
+
+
+//  fprintf(stderr, "work unit done, id=%p  %d %d\n", pWU->m_id, pWU->m_low, pWU->m_high);
+  fflush(stderr);
+
+  while(!wxMyThread::SafeTestDestroy() &&
+        (err1 = mtxQS.Lock()) != wxMUTEX_NO_ERROR)
+  {
+    if(wxMyThread::SafeTestDestroy())
+    {
+      fprintf(stderr, "THREAD DESTROY in %s\n", __FUNCTION__);
+      fflush(stderr);
+      return;
+    }
+    else if(err1 == wxMUTEX_DEAD_LOCK)
+    {
+      fprintf(stderr, "DEADLOCK on QS mutex - killing app\n");
+      fflush(stderr);
+      usleep(100000);
+
+      exit(1);
+      return; // will never actually reach this
+    }
+
+    MySleep(iTimeDelay);
+  }
+
+  if(pWU == pActive) // first in list
+  {
+    pActive = pActive->pNext;
+    if(!pActive)
+    {
+      pTail = NULL;
+    }
+    else
+    {
+      pActive->pPrev = NULL;
+    }
+  }
+  else // prune entry from list
+  {
+    pWU->pPrev->pNext = pWU->pNext;
+    if(pWU->pNext)
+    {
+      pWU->pNext->pPrev = pWU->pPrev;
+    }
+    else
+    {
+      pTail = pWU->pPrev;  // the new tail
+    }
+  }
+
+  // now it's 'free'
+  pWU->pPrev = NULL;
+  pWU->pNext = pFree;
+  pFree = pWU;
+
+  pWU->m_id = NULL;  // by convention
+  pWU->m_state = 0;
+  pWU->m_low = pWU->m_high = 0;
+
+//  InternalReportWorkQueueState();
+
+  mtxQS.Unlock();
+
+}
+
+
+

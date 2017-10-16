@@ -4,11 +4,11 @@
 //
 // This program and source provided for example purposes.  You may
 // redistribute it so long as no modifications are made to any of
-// the source files, and the above copyright notice has been 
+// the source files, and the above copyright notice has been
 // included.  You may also use portions of the sample code in your
 // own programs, as desired.
 
-// Converted from MFC to wxWidgets, January 2005
+// Original conversion from MFC to wxWidgets, January 2005
 
 
 #include "stdafx.h"
@@ -26,14 +26,16 @@ static char BASED_CODE THIS_FILE[] = __FILE__;
 
 extern void InitXmlResource();  // defined in SortdemoResource.cpp
 
-extern const char szAppName[] = "Sort Demo";
+
+
+const TCHAR szAppName[] = __T("Sort Demo");
 
 
 /////////////////////////////////////////////////////////////////////////////
 // CSortdemoApp
 
 BEGIN_EVENT_TABLE(CSortdemoApp, wxApp)
-	EVT_MENU(XRCID("ID_APP_ABOUT"), CSortdemoApp::OnAppAbout)
+	EVT_MENU(XRCID(("ID_APP_ABOUT")), CSortdemoApp::OnAppAbout)
 END_EVENT_TABLE()
 
 
@@ -42,11 +44,9 @@ END_EVENT_TABLE()
 
 CSortdemoApp::CSortdemoApp()
 {
-  // must allocate this now
-  m_pDocManager = new wxDocManager(wxDEFAULT_DOCMAN_FLAGS, TRUE);
-
   m_pMainWnd = NULL;
   m_pSortThread = NULL;
+  m_pDocManager = NULL;
 }
 
 CSortdemoApp::~CSortdemoApp()
@@ -61,7 +61,23 @@ CSortdemoApp::~CSortdemoApp()
 /////////////////////////////////////////////////////////////////////////////
 // The one and only CSortdemoApp object
 
-IMPLEMENT_APP(CSortdemoApp);
+//IMPLEMENT_APP(CSortdemoApp);
+
+CSortdemoApp theApp;
+
+//IMPLEMENT_APP_NO_MAIN(CSortdemoApp);
+//IMPLEMENT_WX_THEME_SUPPORT;
+
+int main(int argc, char *argv[])
+{
+    wxApp::SetInstance(&theApp);
+
+    wxEntryStart( argc, argv );
+    wxTheApp->CallOnInit();
+    wxTheApp->OnRun();
+
+    return 0;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -78,8 +94,10 @@ wxString csCaption;
 
   wxThread::SetConcurrency(255);  // always
 
+  // must allocate this now
+  m_pDocManager = new wxDocManager(wxDEFAULT_DOCMAN_FLAGS, TRUE);
 
-  //// Create a doc template
+  //// Create a doc template - doc manager created in constructor
   wxDocTemplate *pTempl =  new wxDocTemplate(m_pDocManager, _T("SortDemo"), _T(""), _T(""), _T(""),
                                              _T("SortDemo Doc"), _T("SortDemo View"),
                                              CLASSINFO(CMainDoc), CLASSINFO(CMainView));
@@ -87,7 +105,7 @@ wxString csCaption;
   m_pDocManager->SetMaxDocsOpen(1);  // single instance
 
   m_pMainWnd = (wxWindow *)
-    new CMainFrame(m_pDocManager, (wxFrame *) NULL, -1, _T("Sort Demo"),
+    new CMainFrame(m_pDocManager, (wxFrame *) NULL, -1, wxString(_T("Sort Demo")),
                    wxPoint(0, 0), wxSize(500, 400), wxDEFAULT_FRAME_STYLE);
 
   if(!m_pMainWnd)
@@ -111,7 +129,7 @@ wxString csCaption;
   return(TRUE);  // load OK!
 }
 
-int CSortdemoApp::OnExit() 
+int CSortdemoApp::OnExit()
 {
   if(m_pSortThread)
   {
@@ -146,10 +164,10 @@ class CAboutDlg : public wxDialog
 public:
   CAboutDlg();
 
-  static const char m_IDD[];
+  static const TCHAR m_IDD[];
 
   wxWindow *GetDlgItem(long lID)  { return(FindWindowById(lID, this)); }
-  void SetDlgItemText(long lID, const char *szString)
+  void SetDlgItemText(long lID, const TCHAR *szString)
   {
     wxWindow *pItem = GetDlgItem(lID);
     if(pItem)
@@ -168,7 +186,7 @@ public:
     if(pItem)
       return(pItem->GetLabel());
 
-    return("");
+    return(wxString(__T("")));
   }
 
 
@@ -181,7 +199,7 @@ protected:
   DECLARE_EVENT_TABLE()
 };
 
-const char CAboutDlg::m_IDD[]="IDD_ABOUTBOX";
+const TCHAR CAboutDlg::m_IDD[]=__T("IDD_ABOUTBOX");
 
 CAboutDlg::CAboutDlg() // : CDialog(CAboutDlg::IDD)
 {
@@ -191,7 +209,7 @@ CAboutDlg::CAboutDlg() // : CDialog(CAboutDlg::IDD)
 	//}}AFX_DATA_INIT
 }
 
-static const long lAboutBoxID1 = XRCID("IDD_ABOUTBOX_S2");
+static const long lAboutBoxID1 = XRCID(("IDD_ABOUTBOX_S2"));
 
 void CAboutDlg::Update(BOOL bUpdateFlag)
 {
@@ -205,7 +223,7 @@ void CAboutDlg::Update(BOOL bUpdateFlag)
   {
     TransferDataToWindow();
 
-    SetDlgItemText(lAboutBoxID1, "Copyright © 2005 by R. E. Frazier");
+    SetDlgItemText(lAboutBoxID1, __T("Copyright (c) 2005-2017 by R. E. Frazier"));
   }
 }
 
@@ -261,7 +279,7 @@ double dX, dY, dSinX, dCosX, dR, dG, dB;
 
    dSinX = sin(dX);
    dCosX = cos(dX);
-   
+
    if(dSinX == 0 && dCosX >= 0)
    {
       dR = 1;
@@ -338,13 +356,13 @@ double dX, dY, dSinX, dCosX, dR, dG, dB;
    dY = 255 / sqrt(dB * dB + dG * dG + dR * dR);
 
    return(MY_RGB_INFO((int)(dY * dR),(int)(dY * dG),(int)(dY * dB)));
-}    
+}
 
 
 static int pData0[N_DIMENSIONS(pData)];
 static MY_RGB_INFO pColor0[N_DIMENSIONS(pData)];
 
-void CSortdemoApp::DoSortNewdata() 
+void CSortdemoApp::DoSortNewdata()
 {
 UINT ui1;
 

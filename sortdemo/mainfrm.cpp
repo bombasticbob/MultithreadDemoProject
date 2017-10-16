@@ -5,7 +5,7 @@
 //
 // This program and source provided for example purposes.  You may
 // redistribute it so long as no modifications are made to any of
-// the source files, and the above copyright notice has been 
+// the source files, and the above copyright notice has been
 // included.  You may also use portions of the sample code in your
 // own programs, as desired.
 
@@ -39,6 +39,7 @@ extern "C" const int IDM_SORT_SHELL = XRCID("IDM_SORT_SHELL");
 extern "C" const int IDM_SORT_HEAP = XRCID("IDM_SORT_HEAP");
 extern "C" const int IDM_SORT_HEAP2 = XRCID("IDM_SORT_HEAP2");
 extern "C" const int IDM_SORT_QUICK = XRCID("IDM_SORT_QUICK");
+extern "C" const int IDM_SORT_THREAD_QUICK = XRCID("IDM_SORT_THREAD_QUICK");
 extern "C" const int IDM_SORT_KILL = XRCID("IDM_SORT_KILL");
 extern "C" const int IDM_SORT_EXIT = XRCID("IDM_SORT_EXIT");
 extern "C" const int ID_VIEW_TOOLBAR = XRCID("ID_VIEW_TOOLBAR");
@@ -88,6 +89,8 @@ BEGIN_EVENT_TABLE(CMainFrame, wxDocParentFrame)
   EVT_UPDATE_UI(IDM_SORT_HEAP2, CMainFrame::OnUpdateSortHeap2)
   EVT_MENU(IDM_SORT_QUICK, CMainFrame::OnSortQuick)
   EVT_UPDATE_UI(IDM_SORT_QUICK, CMainFrame::OnUpdateSortQuick)
+  EVT_MENU(IDM_SORT_THREAD_QUICK, CMainFrame::OnSortThreadQuick)
+  EVT_UPDATE_UI(IDM_SORT_THREAD_QUICK, CMainFrame::OnUpdateSortThreadQuick)
 
   EVT_MENU(IDM_SORT_KILL, CMainFrame::OnSortKill)
   EVT_UPDATE_UI(IDM_SORT_KILL, CMainFrame::OnUpdateSortKill)
@@ -105,7 +108,7 @@ END_EVENT_TABLE()
 
 /////////////////////////////////////////////////////////////////////////////
 // arrays of IDs used to initialize control bars
-	
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CMainFrame construction/destruction
@@ -122,10 +125,10 @@ CMainFrame::CMainFrame(wxDocManager* manager, wxFrame *parent, wxWindowID id,
    m_pDoc = NULL;
    m_pView = NULL;
 
-   SetIcon(wxXmlResource::Get()->LoadIcon("ICON_Main"));
+   SetIcon(wxXmlResource::Get()->LoadIcon(__T("ICON_Main")));
 
-   SetMenuBar(wxXmlResource::Get()->LoadMenuBar("MENUBAR_Main"));
-   SetToolBar(wxXmlResource::Get()->LoadToolBar(this, "TOOLBAR_Main"));
+   SetMenuBar(wxXmlResource::Get()->LoadMenuBar(__T("MENUBAR_Main")));
+   SetToolBar(wxXmlResource::Get()->LoadToolBar(this, __T("TOOLBAR_Main")));
    CreateStatusBar(1,0,wxID_STATUSBAR);
 }
 
@@ -137,8 +140,10 @@ CMainFrame::~CMainFrame()
 
 void CMainFrame::DoOnCreate(wxDocTemplate *pTempl)
 {
-  m_pDoc = (CMainDoc *)pTempl->CreateDocument("");
+  m_pDoc = (CMainDoc *)pTempl->CreateDocument(__T(""));
   m_pView = (CMainView *)pTempl->CreateView(m_pDoc);
+
+
   m_pView->SetFrame(this);
 
   return;
@@ -202,6 +207,11 @@ void CMainFrame::RePaintLine(UINT uiIndex)
   // happens after each line is swapped, so long as no
   // events are lost, this will always work.
 
+  // TODO:  if this becomes a problem, pending events could
+  //        be consolidated into a single event using a queue
+  //        such that a single received command event empties
+  //        the queue and processes all pending requests
+
   wxCommandEvent evt(wxEVT_PAINTLINE, wxID_MAINFRAME);
   evt.SetInt(uiIndex);
 
@@ -232,7 +242,7 @@ void CMainFrame::OnPaint(wxPaintEvent& event)
   }
 }
 
-void CMainFrame::OnSortExit(wxCommandEvent &evt) 
+void CMainFrame::OnSortExit(wxCommandEvent &evt)
 {
 //  wxCloseEvent evtClose(0,wxID_MAINFRAME);
 //  AddPendingEvent(evtClose);
@@ -242,13 +252,23 @@ void CMainFrame::OnSortExit(wxCommandEvent &evt)
 
 
 unsigned long dwStartTime;
-char szSortInfo[4096];
+wxChar szSortInfo[4096];
 
-void SortInfo(LPCSTR szSortName)
+void SortInfo(const wxChar *szSortName)
 {
-   sprintf(szSortInfo, "Sort: %s  %d swaps, %d compares, %d milliseconds",
-           szSortName, iSwaps, iCompares,
-           (MyGetTickCount() - dwStartTime));
+   wxSprintf(szSortInfo, __T("Sort: %s\n%d swaps, %d compares,\n%d milliseconds"),
+             szSortName, iSwaps, iCompares,
+             (MyGetTickCount() - dwStartTime));
+
+   // called outside of main thread - on sort thread exit, a dialog
+   // box will display this information.
+}
+
+void SortInfoT(const wxChar *szSortName)
+{
+   wxSprintf(szSortInfo, __T("Sort: %s\n%d swaps, %d compares,\n%d sched, %d milliseconds"),
+             szSortName, iSwaps, iCompares, iSchedWork,
+             (MyGetTickCount() - dwStartTime));
 
    // called outside of main thread - on sort thread exit, a dialog
    // box will display this information.
@@ -269,37 +289,42 @@ unsigned long SortThread(void * lpvParms)
    {
       case ID_SORT_HEAP:
          HeapSort();
-         SortInfo("Heap Sort (1)");
+         SortInfo(__T("Heap Sort (1)"));
          break;
-         
+
       case ID_SORT_HEAP2:
          HeapSort2();
-         SortInfo("Heap Sort (2)");
+         SortInfo(__T("Heap Sort (2)"));
          break;
-         
+
       case ID_SORT_QUICK:
          QuickSort();
-         SortInfo("Quick Sort");
+         SortInfo(__T("Quick Sort"));
+         break;
+
+      case ID_SORT_THREAD_QUICK:
+         ThreadQuickSort();
+         SortInfoT(__T("Thread Quick Sort"));
          break;
 
       case ID_SORT_BUBBLE:
          BubbleSort();
-         SortInfo("Bubble Sort");
+         SortInfo(__T("Bubble Sort"));
          break;
 
       case ID_SORT_SHELL:
          ShellSort();
-         SortInfo("Shell Sort");
+         SortInfo(__T("Shell Sort"));
          break;
 
       case ID_SORT_INSERTION:
          InsertionSort();
-         SortInfo("Insertion Sort");
+         SortInfo(__T("Insertion Sort"));
          break;
 
       case ID_SORT_EXCHANGE:
          ExchangeSort();
-         SortInfo("Exchange Sort");
+         SortInfo(__T("Exchange Sort"));
          break;
    }
 
@@ -310,7 +335,7 @@ unsigned long SortThread(void * lpvParms)
    if(theApp.m_pMainWnd)
    {
      wxCommandEvent evt(wxEVT_SORT_COMPLETE, wxID_MAINFRAME);
-     theApp.m_pMainWnd->AddPendingEvent(evt);
+     ((CMainFrame *)theApp.m_pMainWnd)->DoAddPendingEvent(evt);
    }
 
    theApp.m_SortMutex.Unlock();
@@ -323,11 +348,11 @@ void CMainFrame::CreateSortThread(UINT uiParms)
    // temporarily disable menu (and buttons)
    EnableSortMenuItems(0);
 
-   theApp.m_pSortThread = wxBeginThread(SortThread, (void *)uiParms);
+   theApp.m_pSortThread = wxBeginThread(SortThread, (void *)(intptr_t)uiParms);
 
    if(!theApp.m_pSortThread)
    {
-      wxMessageBox("?Unable to spawn thread for sort", szAppName, wxOK | wxICON_HAND);
+      wxMessageBox(__T("?Unable to spawn thread for sort"), szAppName, wxOK | wxICON_HAND);
       EnableSortMenuItems(1);
    }
 }
@@ -337,10 +362,10 @@ void CMainFrame::OnSortComplete(wxCommandEvent &evt)
    EnableSortMenuItems(1);
    theApp.m_pSortThread = NULL;  // make sure
 
-   wxMessageBox(szSortInfo, "* SORT RESULTS *", wxOK | wxICON_INFORMATION);
+   wxMessageBox(szSortInfo, __T("* SORT RESULTS *"), wxOK | wxICON_INFORMATION);
 }
 
-void CMainFrame::OnSortKill(wxCommandEvent &evt) 
+void CMainFrame::OnSortKill(wxCommandEvent &evt)
 {
    Enable(0);  // disables the window
 
@@ -364,7 +389,7 @@ void CMainFrame::OnSortKill(wxCommandEvent &evt)
    Enable(1);  // re-enable the window (I am done)
 }
 
-void CMainFrame::OnUpdateSortKill(wxUpdateUIEvent &cmdUI) 
+void CMainFrame::OnUpdateSortKill(wxUpdateUIEvent &cmdUI)
 {
   cmdUI.Enable(theApp.m_pSortThread != NULL);
 
@@ -377,40 +402,46 @@ void CMainFrame::OnUpdateSortKill(wxUpdateUIEvent &cmdUI)
 void CMainFrame::OnSortHeap(wxCommandEvent &evt)
 {
    if(!theApp.m_pSortThread)
-     CreateSortThread(ID_SORT_HEAP);   
+     CreateSortThread(ID_SORT_HEAP);
 }
 
-void CMainFrame::OnSortHeap2(wxCommandEvent &evt) 
+void CMainFrame::OnSortHeap2(wxCommandEvent &evt)
 {
    if(!theApp.m_pSortThread)
      CreateSortThread(ID_SORT_HEAP2);
 }
 
-void CMainFrame::OnSortInsertion(wxCommandEvent &evt) 
+void CMainFrame::OnSortInsertion(wxCommandEvent &evt)
 {
    if(!theApp.m_pSortThread)
      CreateSortThread(ID_SORT_INSERTION);
 }
 
-void CMainFrame::OnSortQuick(wxCommandEvent &evt) 
+void CMainFrame::OnSortQuick(wxCommandEvent &evt)
 {
    if(!theApp.m_pSortThread)
-     CreateSortThread(ID_SORT_QUICK);   
+     CreateSortThread(ID_SORT_QUICK);
 }
 
-void CMainFrame::OnSortShell(wxCommandEvent &evt) 
+void CMainFrame::OnSortThreadQuick(wxCommandEvent &evt)
 {
    if(!theApp.m_pSortThread)
-     CreateSortThread(ID_SORT_SHELL);   
+     CreateSortThread(ID_SORT_THREAD_QUICK);
 }
 
-void CMainFrame::OnSortExchange(wxCommandEvent &evt) 
+void CMainFrame::OnSortShell(wxCommandEvent &evt)
 {
    if(!theApp.m_pSortThread)
-     CreateSortThread(ID_SORT_EXCHANGE);   
+     CreateSortThread(ID_SORT_SHELL);
 }
 
-void CMainFrame::OnSortBubble(wxCommandEvent &evt) 
+void CMainFrame::OnSortExchange(wxCommandEvent &evt)
+{
+   if(!theApp.m_pSortThread)
+     CreateSortThread(ID_SORT_EXCHANGE);
+}
+
+void CMainFrame::OnSortBubble(wxCommandEvent &evt)
 {
    if(!theApp.m_pSortThread)
      CreateSortThread(ID_SORT_BUBBLE);
@@ -418,75 +449,82 @@ void CMainFrame::OnSortBubble(wxCommandEvent &evt)
 
 
 
-void CMainFrame::OnUpdateSortBubble(wxUpdateUIEvent &cmdUI) 
+void CMainFrame::OnUpdateSortBubble(wxUpdateUIEvent &cmdUI)
 {
    cmdUI.Enable(m_bEnable);
 
    CMDUI_MANAGE_TOOLBAR(cmdUI);
 }
 
-void CMainFrame::OnUpdateSortExchange(wxUpdateUIEvent &cmdUI) 
+void CMainFrame::OnUpdateSortExchange(wxUpdateUIEvent &cmdUI)
 {
    cmdUI.Enable(m_bEnable);
 
    CMDUI_MANAGE_TOOLBAR(cmdUI);
 }
 
-void CMainFrame::OnUpdateSortHeap(wxUpdateUIEvent &cmdUI) 
+void CMainFrame::OnUpdateSortHeap(wxUpdateUIEvent &cmdUI)
 {
    cmdUI.Enable(m_bEnable);
 
    CMDUI_MANAGE_TOOLBAR(cmdUI);
 }
 
-void CMainFrame::OnUpdateSortHeap2(wxUpdateUIEvent &cmdUI) 
+void CMainFrame::OnUpdateSortHeap2(wxUpdateUIEvent &cmdUI)
 {
    cmdUI.Enable(m_bEnable);
 
    CMDUI_MANAGE_TOOLBAR(cmdUI);
 }
 
-void CMainFrame::OnUpdateSortInsertion(wxUpdateUIEvent &cmdUI) 
+void CMainFrame::OnUpdateSortInsertion(wxUpdateUIEvent &cmdUI)
 {
    cmdUI.Enable(m_bEnable);
 
    CMDUI_MANAGE_TOOLBAR(cmdUI);
 }
 
-void CMainFrame::OnUpdateSortQuick(wxUpdateUIEvent &cmdUI) 
+void CMainFrame::OnUpdateSortQuick(wxUpdateUIEvent &cmdUI)
 {
    cmdUI.Enable(m_bEnable);
 
    CMDUI_MANAGE_TOOLBAR(cmdUI);
 }
 
-void CMainFrame::OnUpdateSortShell(wxUpdateUIEvent &cmdUI) 
+void CMainFrame::OnUpdateSortThreadQuick(wxUpdateUIEvent &cmdUI)
 {
    cmdUI.Enable(m_bEnable);
 
    CMDUI_MANAGE_TOOLBAR(cmdUI);
 }
 
-void CMainFrame::OnSortNewdata(wxCommandEvent &evt) 
+void CMainFrame::OnUpdateSortShell(wxUpdateUIEvent &cmdUI)
+{
+   cmdUI.Enable(m_bEnable);
+
+   CMDUI_MANAGE_TOOLBAR(cmdUI);
+}
+
+void CMainFrame::OnSortNewdata(wxCommandEvent &evt)
 {
   if(m_bEnable && !theApp.m_pSortThread)
     theApp.DoSortNewdata();
 }
 
-void CMainFrame::OnUpdateSortNewdata(wxUpdateUIEvent &cmdUI) 
+void CMainFrame::OnUpdateSortNewdata(wxUpdateUIEvent &cmdUI)
 {
    cmdUI.Enable(m_bEnable);
 
    CMDUI_MANAGE_TOOLBAR(cmdUI);
 }
 
-void CMainFrame::OnSortRestore(wxCommandEvent &evt) 
+void CMainFrame::OnSortRestore(wxCommandEvent &evt)
 {
   if(m_bEnable && !theApp.m_pSortThread)
     theApp.DoSortRestore();
 }
 
-void CMainFrame::OnUpdateSortRestore(wxUpdateUIEvent &cmdUI) 
+void CMainFrame::OnUpdateSortRestore(wxUpdateUIEvent &cmdUI)
 {
    cmdUI.Enable(m_bEnable);
 
@@ -502,7 +540,7 @@ void CMainFrame::OnViewToolbar(wxCommandEvent &evt)
     pTB->Destroy();
   }
   else
-    SetToolBar(wxXmlResource::Get()->LoadToolBar(this, "TOOLBAR_Main"));
+    SetToolBar(wxXmlResource::Get()->LoadToolBar(this, __T("TOOLBAR_Main")));
 
   Refresh();
 }

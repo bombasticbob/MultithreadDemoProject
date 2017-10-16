@@ -16,5 +16,6 @@ void HeapSort2();
 void ExchangeSort();
 void ShellSort();
 void QuickSort();
+void ThreadQuickSort();
 
-extern int iSwaps, iCompares;
+extern int iSwaps, iCompares, iSchedWork;

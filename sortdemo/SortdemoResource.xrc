@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <resource version="2.3.0.1">
-  <object class="wxIcon" name="ICON_Main">./res/Sortdemo.ico</object>
+  <object class="wxIcon" name="ICON_Main">./res/sortdemo.ico</object>
   <object class="wxToolBar" name="TOOLBAR_Main">
     <style>wxTB_FLAT|wxTB_DOCKABLE</style>
     <margins>2,2</margins>
     <object class="tool" name="IDM_SORT_NEWDATA">
       <bitmap>res/toolbar1.bmp</bitmap>
       <tooltip>Generate New Data</tooltip>
-    </object>  
+    </object>
     <object class="tool" name="IDM_SORT_RESTORE">
       <bitmap>res/toolbar2.bmp</bitmap>
       <tooltip>Restore Previous Data</tooltip>
@@ -40,6 +40,10 @@
     <object class="tool" name="IDM_SORT_QUICK">
       <bitmap>res/toolbar9.bmp</bitmap>
       <tooltip>Quick Sort</tooltip>
+    </object>
+    <object class="tool" name="IDM_SORT_THREAD_QUICK">
+      <bitmap>res/toolbar9a.bmp</bitmap>
+      <tooltip>Threaded Quick Sort</tooltip>
     </object>
     <object class="separator"/>
     <object class="tool" name="IDM_SORT_KILL">
@@ -84,6 +88,9 @@
       <object class="wxMenuItem" name="IDM_SORT_QUICK">
         <label>_7 Quick</label>
       </object>
+      <object class="wxMenuItem" name="IDM_SORT_THREAD_QUICK">
+        <label>_8 Thread Quick</label>
+      </object>
       <object class="separator"/>
       <object class="wxMenuItem" name="IDM_SORT_KILL">
         <label>_Kill Current Sort Thread</label>
@@ -111,39 +118,80 @@
       </object>
     </object>
   </object>
-  
+
   <object class="wxDialog" name="IDD_ABOUTBOX">
+    <style>wxCAPTION</style>
+    <size>224,64d</size>
+    <title>About Sort Demo</title>
+    <object class="wxStaticBitmap" name="IDD_ABOUTBOX_ICON_1">
+      <size>16,16d</size>
+      <pos>8,8d</pos>
+      <bitmap>./res/sortdemo.ico</bitmap>
+    </object>
+    <object class="wxStaticText" name="IDD_ABOUTBOX_S1">
+      <pos>32,12d</pos>
+      <size>160,9d</size>
+      <style>wxST_NO_AUTORESIZE|wxALIGN_CENTRE</style>
+      <label>SORT DEMO Version 1.0</label>
+    </object>
+    <object class="wxTextCtrl" name="IDD_ABOUTBOX_S2">
+      <size>160,9d</size>
+      <pos>32,24d</pos>
+      <style>wxBORDER_NONE|wxTE_CENTRE|wxTE_READONLY</style>
+      <value>Copyright (c) 2005-2010 by R. E. Frazier</value>
+      <disabled>1</disabled>
+    </object>
+    <object class="wxTextCtrl" name="IDD_ABOUTBOX_S3">
+      <size>160,9d</size>
+      <pos>32,34d</pos>
+      <style>wxBORDER_NONE|wxTE_CENTRE|wxTE_READONLY</style>
+      <value>all rights reserved</value>
+    </object>
+    <object class="wxStaticBitmap" name="IDD_ABOUTBOX_ICON_2">
+      <size>16,16d</size>
+      <pos>200,9d</pos>
+      <bitmap>./res/sortdemo.ico</bitmap>
+    </object>
+    <object class="wxButton" name="wxID_OK">
+      <size>40,14d</size>
+      <pos>92,48d</pos>
+      <label>OK</label>
+      <default>1</default>
+    </object>
+  </object>  
+
+  <object class="wxDialog" name="IDD_ABOUTBOX_OLD">
     <style>wxCAPTION|wxTHICK_FRAME</style>
     <title>About Sort Demo</title>
     <object class="wxBoxSizer">
       <orient>wxVERTICAL</orient>
-      <object class="sizeritem" name="IDD_ABOUTBOX_0a">
+      <object class="sizeritem" name="IDD_ABOUTBOX_OLD_0a">
         <object class="wxBoxSizer">
           <orient>wxHORIZONTAL</orient>
-          <object class="sizeritem" name="IDD_ABOUTBOX_1a">
+          <object class="sizeritem" name="IDD_ABOUTBOX_OLD_1a">
             <object class="wxStaticBitmap" name="IDD_ABOUTBOX_ICON_1">
               <size>16,16d</size>
-              <bitmap>./res/Sortdemo.ico</bitmap>
+              <bitmap>./res/sortdemo.ico</bitmap>
             </object>
           </object>
-          <object class="sizeritem" name="IDD_ABOUTBOX_2a">
+          <object class="sizeritem" name="IDD_ABOUTBOX_OLD_2a">
             <object class="wxBoxSizer">
               <orient>wxVERTICAL</orient>
-              <object class="sizeritem" name="IDD_ABOUTBOX_3a">
+              <object class="sizeritem" name="IDD_ABOUTBOX_OLD_3a">
                 <object class="wxStaticText" name="IDD_ABOUTBOX_S1">
                   <size>200,9d</size>
                   <style>wxALIGN_CENTRE|wxST_NO_AUTORESIZE</style>
                   <label>SORT DEMO Version 1.0</label>
                 </object>
               </object>  
-              <object class="sizeritem" name="IDD_ABOUTBOX_3b">
+              <object class="sizeritem" name="IDD_ABOUTBOX_OLD_3b">
                 <object class="wxStaticText" name="IDD_ABOUTBOX_S2">
                   <size>200,9d</size>
                   <style>wxALIGN_CENTRE|wxST_NO_AUTORESIZE</style>
-                  <label>Copyright (c) 2005 by R. E. Frazier</label>
+                  <label>Copyright (c) 2005-2010 by R. E. Frazier</label>
                 </object>
               </object>  
-              <object class="sizeritem" name="IDD_ABOUTBOX_3c">
+              <object class="sizeritem" name="IDD_ABOUTBOX_OLD_3c">
                 <object class="wxStaticText" name="IDD_ABOUTBOX_S3">
                   <size>200,9d</size>
                   <style>wxALIGN_CENTRE|wxST_NO_AUTORESIZE</style>
@@ -153,15 +201,15 @@
               <border>1</border>
             </object>  
           </object>
-          <object class="sizeritem" name="IDD_ABOUTBOX_2b">
+          <object class="sizeritem" name="IDD_ABOUTBOX_OLD_2b">
             <object class="wxStaticBitmap" name="IDD_ABOUTBOX_ICON_2">
               <size>16,16d</size>
-              <bitmap>./res/Sortdemo.ico</bitmap>
+              <bitmap>./res/sortdemo.ico</bitmap>
             </object>
           </object>
         </object>
       </object>
-      <object class="sizeritem" name="IDD_ABOUTBOX_0b">
+      <object class="sizeritem" name="IDD_ABOUTBOX_OLD_0b">
         <flag>wxALIGN_CENTRE</flag>
         <object class="wxButton" name="wxID_OK">
           <size>40,14d</size>
@@ -171,5 +219,5 @@
       </object>
       <border>10</border>
     </object>
-  </object>  
+  </object>
 </resource>

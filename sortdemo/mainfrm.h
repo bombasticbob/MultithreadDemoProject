@@ -5,7 +5,7 @@
 //
 // This program and source provided for example purposes.  You may
 // redistribute it so long as no modifications are made to any of
-// the source files, and the above copyright notice has been 
+// the source files, and the above copyright notice has been
 // included.  You may also use portions of the sample code in your
 // own programs, as desired.
 /////////////////////////////////////////////////////////////////////////////
@@ -26,6 +26,7 @@ extern "C" const int IDM_SORT_SHELL;
 extern "C" const int IDM_SORT_HEAP;
 extern "C" const int IDM_SORT_HEAP2;
 extern "C" const int IDM_SORT_QUICK;
+extern "C" const int IDM_SORT_THREAD_QUICK;
 extern "C" const int IDM_SORT_KILL;
 extern "C" const int IDM_SORT_EXIT;
 extern "C" const int ID_VIEW_TOOLBAR;
@@ -55,7 +56,7 @@ public:
 public:
    CMainFrame(wxDocManager* manager, wxFrame *parent, wxWindowID id, const wxString& title,
               const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize,
-              long style = wxDEFAULT_FRAME_STYLE, const wxString& name = "frame");
+              long style = wxDEFAULT_FRAME_STYLE, const wxString& name = __T("frame"));
 
    virtual ~CMainFrame();
 
@@ -69,6 +70,8 @@ public:
    void OnPaintLine(wxCommandEvent &evt);
 
    void DoOnCreate(wxDocTemplate *); // was 'OnCreate()' message handler, explicitly called now after I create it
+
+   void DoAddPendingEvent(const wxEvent& event) { AddPendingEvent(event); }
 
 protected:  // control bar embedded members
    CMainDoc     *m_pDoc;
@@ -89,7 +92,8 @@ protected:
   void OnSortShell(wxCommandEvent &evt);
   void OnSortHeap(wxCommandEvent &evt);
   void OnSortHeap2(wxCommandEvent &evt);
-  void OnSortQuick(wxCommandEvent &evt); 
+  void OnSortQuick(wxCommandEvent &evt);
+  void OnSortThreadQuick(wxCommandEvent &evt);
 
   void OnUpdateSortBubble(wxUpdateUIEvent &cmdUI);
   void OnUpdateSortHeap(wxUpdateUIEvent &cmdUI);
@@ -97,6 +101,7 @@ protected:
   void OnUpdateSortInsertion(wxUpdateUIEvent &cmdUI);
   void OnUpdateSortExchange(wxUpdateUIEvent &cmdUI);
   void OnUpdateSortQuick(wxUpdateUIEvent &cmdUI);
+  void OnUpdateSortThreadQuick(wxUpdateUIEvent &cmdUI);
   void OnUpdateSortShell(wxUpdateUIEvent &cmdUI);
 
   void OnSortNewdata(wxCommandEvent &evt);
@@ -134,6 +139,7 @@ enum
   ID_SORT_INSERTION,
   ID_SORT_HEAP,
   ID_SORT_QUICK,
+  ID_SORT_THREAD_QUICK,
   ID_SORT_EXIT,
   ID_SORT_RESTORE,
   ID_SORT_KILL,

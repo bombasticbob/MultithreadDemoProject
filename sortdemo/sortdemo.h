@@ -5,7 +5,7 @@
 //
 // This program and source provided for example purposes.  You may
 // redistribute it so long as no modifications are made to any of
-// the source files, and the above copyright notice has been 
+// the source files, and the above copyright notice has been
 // included.  You may also use portions of the sample code in your
 // own programs, as desired.
 
@@ -28,6 +28,14 @@
 #ifndef LPSTR
 #define LPSTR char *
 #endif // LPSTR
+
+#if wxUSE_WCHAR_T /* defined as non-zero value when using wide char */
+#define TCHAR wchar_t
+#define __T(X) (L##X)
+#else // single-byte characters, aka ASCII
+#define TCHAR char
+#define __T(X) (X)
+#endif // wxUSE_WCHAR_T
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -65,7 +73,7 @@ public:
   DECLARE_EVENT_TABLE()
 };
 
-extern const char szAppName[];
+extern const wxChar szAppName[];
 
 unsigned long MyGetTickCount();
 
@@ -125,8 +133,9 @@ wxMyThread *wxBeginThread(wxClassInfo *pThreadClass,
                           void *pSecurity = NULL);
 
 
-#define theApp (wxGetApp())  /* for MFC compatibility */
-DECLARE_APP(CSortdemoApp);
+//#define theApp (wxGetApp())  /* for MFC compatibility */
+//DECLARE_APP(CSortdemoApp);
+extern CSortdemoApp theApp;
 
 extern "C" void MySleep(unsigned long lMilliSeconds);
 

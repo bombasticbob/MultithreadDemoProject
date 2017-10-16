@@ -7,7 +7,7 @@
 //
 // This program and source provided for example purposes.  You may
 // redistribute it so long as no modifications are made to any of
-// the source files, and the above copyright notice has been 
+// the source files, and the above copyright notice has been
 // included.  You may also use portions of the sample code in your
 // own programs, as desired.
 
@@ -64,3 +64,5 @@
 #define N_DIMENSIONS(X) (sizeof(X)/sizeof(*(X)))
 
 #endif // RC_INVOKED
+
+

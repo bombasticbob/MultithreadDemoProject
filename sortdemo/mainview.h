@@ -9,6 +9,11 @@ class CMainDoc : public wxDocument
 DECLARE_DYNAMIC_CLASS(CMainDoc)
 public:
   // nothing to see here, really
+
+
+  virtual std::ostream & SaveObject(std::ostream&parm) { return parm; }
+  virtual std::istream & LoadObject(std::istream&parm) { return parm; }
+
 };
 
 class CMainView : public wxView
@@ -17,6 +22,11 @@ DECLARE_DYNAMIC_CLASS(CMainView)
 public:
 	CMainView();           // protected constructor used by dynamic creation
 //	DECLARE_DYNCREATE(CMainView)
+
+  CMainView(CMainDoc *pDoc)
+  {
+    SetDocument(pDoc);
+  }
 
 // Attributes
 public:
@@ -111,6 +121,6 @@ inline MY_RGB_INFO RGB(unsigned char nRed, unsigned char nGreen, unsigned char n
 {
   return(MY_RGB_INFO(nRed, nGreen, nBlue));
 }
-  
+
 extern MY_RGB_INFO pColor[N_DIMENSIONS(pData)];  // same dim as 'pData'
 

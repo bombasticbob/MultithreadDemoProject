@@ -5,7 +5,7 @@
 //
 // This program and source provided for example purposes.  You may
 // redistribute it so long as no modifications are made to any of
-// the source files, and the above copyright notice has been 
+// the source files, and the above copyright notice has been
 // included.  You may also use portions of the sample code in your
 // own programs, as desired.
 
@@ -102,7 +102,7 @@ wxPen cpenBlack(MY_RGB_INFO(0,0,0), 1, wxSOLID);
 
    rct = GetFrame()->GetClientRect();
 
-   pDC->BeginDrawing();
+//   pDC->BeginDrawing(); this doesn't do anything anyway and is now deprecated
 
    wxPen cpenOld = pDC->GetPen();
    pDC->SetPen(cpenBlack);
@@ -115,7 +115,7 @@ wxPen cpenBlack(MY_RGB_INFO(0,0,0), 1, wxSOLID);
 
    pDC->SetPen(cpenOld);
 
-   pDC->EndDrawing();
+//   pDC->EndDrawing(); this doesn't do anything anyway and is now deprecated
 
 //   ReleaseMutex(theApp.m_hSortMutex);
 //   theApp.m_SortMutex.Unlock();
@@ -135,7 +135,7 @@ wxRect rct;
    else
      pDC2 = pDC;
 
-   pDC2->BeginDrawing();
+//   pDC2->BeginDrawing(); this doesn't do anything anyway and is now deprecated
 
    wxPen cpenOld = pDC2->GetPen();
    pDC2->SetPen(cpen);
@@ -149,7 +149,7 @@ wxRect rct;
 
    pDC2->SetPen(cpenOld);
 
-   pDC2->EndDrawing();
+//   pDC2->EndDrawing(); this doesn't do anything anyway and is now deprecated
 
    if(pDC != pDC2)
      delete pDC2;
@@ -174,10 +174,10 @@ wxRect rct;
 ///////////////////////////////////////////////////////////////////////////////
 //// CMainView message handlers
 //
-//void CMainView::PostNcDestroy() 
+//void CMainView::PostNcDestroy()
 //{
 //	// TODO: Add your specialized code here and/or call the base class
-//	
+//
 ////	CView::PostNcDestroy();  // do *NOT* call this!  it deletes 'this'
 //                            // and is only valid if I'm allocated
 //                            // from the heap, which I am not.
