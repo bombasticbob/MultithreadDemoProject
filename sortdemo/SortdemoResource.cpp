@@ -659,6 +659,6 @@ void InitXmlResource()
     XRC_ADD_FILE(wxT("XRC_resource/SortdemoResource.cpp$res_toolbar9a.bmp"), xml_res_file_10, xml_res_size_10, wxT("image/bmp"));
     XRC_ADD_FILE(wxT("XRC_resource/SortdemoResource.cpp$res_toolbar10.bmp"), xml_res_file_11, xml_res_size_11, wxT("image/bmp"));
     XRC_ADD_FILE(wxT("XRC_resource/SortdemoResource.cpp$res_toolbar11.bmp"), xml_res_file_12, xml_res_size_12, wxT("image/bmp"));
-    XRC_ADD_FILE(wxT("XRC_resource/SortdemoResource.cpp$._SortdemoResource.xrc"), xml_res_file_13, xml_res_size_13, wxT("text/xml"));
-    wxXmlResource::Get()->Load(wxT("memory:XRC_resource/SortdemoResource.cpp$._SortdemoResource.xrc"));
+    XRC_ADD_FILE(wxT("XRC_resource/SortdemoResource.cpp$SortdemoResource.xrc"), xml_res_file_13, xml_res_size_13, wxT("text/xml"));
+    wxXmlResource::Get()->Load(wxT("memory:XRC_resource/SortdemoResource.cpp$SortdemoResource.xrc"));
 }

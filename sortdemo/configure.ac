@@ -4,21 +4,23 @@ AC_PREREQ(2.59)
 
 AC_CONFIG_SRCDIR(sortdemo.cpp)
 AM_INIT_AUTOMAKE
-AC_PROG_CC
+# use system default 'cc' when available; else, gcc
+AC_PROG_CC([cc gcc])
 AC_PATH_XTRA
 
 AM_OPTIONS_WXCONFIG
-AM_PATH_WXCONFIG(2.4.2, wxWin=1)
+AM_PATH_WXCONFIG([2.6.0], wxWin=1)
 
 if test "$wxWin" != 1; then
   AC_MSG_ERROR([
-                wxWindows must be installed on your system
-                but the wx-config script couldn't be found.
-                Please check that wx-config is in the path, the directory
-                where wxWindows libraries are installed (returned by
-                'wx-config --libs' command) is in LD_LIBRARY_PATH or
-                an equivalent variable and wxWindows version is 2.4.2
-                or above.]) ;
+                wxWindows must be installed on your system, but the wx-config
+                script couldn't be located. Please check that wx-config is in
+                the path, the directory where wxWindows libraries are installed
+                (returned by 'wx-config --libs' command) is in LD_LIBRARY_PATH or
+                an equivalent variable, and wxWindows version is 2.6.0 or above.
+                If the wx-config location is NOT in the path, or the application 
+                name is NOT 'wx-config', you can specify the correct (fully-
+                qualified) path name using the --with-wx-config option.]) ;
 fi
 
 # recommended by autoscan
@@ -27,7 +29,8 @@ AC_CHECK_HEADERS([stdio.h])
 AC_CHECK_HEADERS([sys/timeb.h])
 AC_HEADER_STDBOOL
 AC_C_INLINE
-AC_PROG_CXX
+# use system default 'c++' when available; else, g++
+AC_PROG_CXX([c++ g++])
 AC_TYPE_SIZE_T
 
 AC_CHECK_FUNCS([printf sprintf ftime memset sqrt])
@@ -111,15 +114,21 @@ fi
 echo "$as_me:$LINENO: checking for wxrc" >&5
 echo $ECHO_N "checking for wxrc ... $ECHO_C" >&6
 
+# here is where I differ from the standard scripts and
+# check for installations like is used on FreeBSD
+
 WXRC_PATH="" ;
 for xpath in `echo "$PATH" | sed 's/:/ /g'` ;
 do
-  if ( test -f "$xpath""/wxrc" ) ; then
-    if ( test -x "$xpath""/wxrc" ) ; then
-      WXRC_PATH="$xpath""/wxrc" ;
-      break ;
-    fi ;
-  fi ;
+  for xp2 in ${xpath}/wxrc* ; do
+    if ( test -x "${xp2}" ) ; then
+      xp3=`basename ${xp2}`
+      WXRC_PATH=`${WX_CONFIG_NAME} --utility=${xp3}`
+      if ( test "x" != x"$WXRC_PATH" ) ; then
+        break ;
+      fi ;
+    fi;
+  done ;
 done
 
 if ( test "$WXRC_PATH" = "" ) ; then

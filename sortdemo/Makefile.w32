@@ -225,10 +225,14 @@ DEP_SORTDE=\
     $(WXWIN)/include/wx/msw/bullseye.cur \
     $(WXWIN)/include/wx/msw/pencil.cur \
     $(WXWIN)/include/wx/msw/magnif1.cur \
+    $(WXWIN)/include/wx/msw/noentry.cur \
+    $(WXWIN)/include/wx/msw/size.cur \
     $(WXWIN)/include/wx/msw/roller.cur \
+    $(WXWIN)/include/wx/msw/watch1.cur \
     $(WXWIN)/include/wx/msw/pbrush.cur \
     $(WXWIN)/include/wx/msw/pntleft.cur \
     $(WXWIN)/include/wx/msw/pntright.cur \
+    $(WXWIN)/include/wx/msw/query.cur \
     $(WXWIN)/include/wx/msw/blank.cur \
     $(WXWIN)/include/wx/msw/rightarr.cur \
     $(WXWIN)/include/wx/msw/cross.cur \
@@ -240,6 +244,7 @@ DEP_SORTDE=\
     $(WXWIN)/include/wx/msw/cdrom.ico \
     $(WXWIN)/include/wx/msw/floppy.ico \
     $(WXWIN)/include/wx/msw/removble.ico \
+    $(WXWIN)/include/wx/msw/disable.bmp \
     $(WXWIN)/include/wx/msw/csquery.bmp \
     $(WXWIN)/include/wx/msw/colours.bmp
 

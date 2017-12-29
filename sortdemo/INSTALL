@@ -46,6 +46,17 @@ b)  Ensure that the WXWIN environment variable points to the root of the
     directory tree where wxWidgets (version 2.4.2 or later) is installed,
     and that it was built for statically linked wxWidgets libraries.
 
+  b.1) if the wx-config program has a DIFFERENT name, or is located
+       outside of the path, use the following configure argument to
+       specify its location
+
+    configure --with-wx-config=/path/to/app/wx-config-name
+
+    where 'wx-config-name' is the name of the wx-config application
+          ( i.e. may be wxgtk-config or wx-config-x.x.x or similar )
+     and  '/path/to/app' is the path containing the executable
+          ( typically /usr/bin or /usr/local/bin )
+
 c)  Ensure you have built 'xrc' and 'wxrc'.  The 'wxrc' application is
     only necessary if you plan on altering the XML resource script.  The
     'xrc' library (at this time) is always statically linked.
